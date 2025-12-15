@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>FairSpin MVP</title>
+  <title>FairSpin</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
@@ -17,18 +17,25 @@
     }
     .container {
       text-align: center;
+      width: 100%;
+      max-width: 340px;
     }
     .balance {
       font-size: 22px;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
-    .last {
-      font-size: 14px;
+    .sub {
+      font-size: 13px;
       opacity: 0.7;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
+    }
+    .spins {
+      font-size: 14px;
+      opacity: 0.8;
+      margin-bottom: 14px;
     }
     button {
-      padding: 10px 26px;
+      padding: 10px 28px;
       font-size: 16px;
       border-radius: 20px;
       border: none;
@@ -36,29 +43,80 @@
       color: #000000;
       cursor: pointer;
     }
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .footer {
+      font-size: 11px;
+      opacity: 0.55;
+      margin-top: 18px;
+      line-height: 1.4;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>FairSpin MVP</h1>
+    <h1>FairSpin</h1>
 
     <div class="balance" id="balance">Balance: $0.0000</div>
-    <div class="last" id="last">Last spin: —</div>
+    <div class="sub" id="lifetime">Lifetime earned: $0.0000</div>
+    <div class="sub" id="withdraw">Withdrawable soon</div>
 
-    <button onclick="spin()">Spin</button>
+    <div class="spins" id="spins">Spins left today: 50</div>
 
-    <p style="margin-top:20px; font-size:12px; opacity:0.6;">
-      Prototype. Balance represents your share of ad revenue.
-    </p>
+    <button id="spinBtn" onclick="spin()">Spin</button>
+
+    <div class="footer">
+      Ad-funded positive-EV game.<br>
+      No deposits. No losses. Prototype.
+    </div>
   </div>
 
   <script>
-    let balance = parseFloat(localStorage.getItem("balance")) || 0;
+    /* CONFIG */
+    const DAILY_CAP = 50;
+    const WITHDRAW_THRESHOLD = 5.00;
 
-    document.getElementById("balance").innerText =
-      "Balance: $" + balance.toFixed(4);
+    /* DATE */
+    const today = new Date().toDateString();
+
+    /* STATE */
+    let balance = parseFloat(localStorage.getItem("balance")) || 0;
+    let lifetime = parseFloat(localStorage.getItem("lifetime")) || 0;
+    let spins = parseInt(localStorage.getItem("spins")) || DAILY_CAP;
+    let lastDate = localStorage.getItem("date");
+
+    if (lastDate !== today) {
+      spins = DAILY_CAP;
+      localStorage.setItem("date", today);
+      localStorage.setItem("spins", spins);
+    }
+
+    /* UI INIT */
+    updateUI();
+
+    function updateUI() {
+      document.getElementById("balance").innerText =
+        "Balance: $" + balance.toFixed(4);
+
+      document.getElementById("lifetime").innerText =
+        "Lifetime earned: $" + lifetime.toFixed(4);
+
+      document.getElementById("withdraw").innerText =
+        balance >= WITHDRAW_THRESHOLD
+          ? "Withdrawable (coming soon)"
+          : "Withdrawable at $" + WITHDRAW_THRESHOLD.toFixed(2);
+
+      document.getElementById("spins").innerText =
+        "Spins left today: " + spins;
+
+      document.getElementById("spinBtn").disabled = spins <= 0;
+    }
 
     function spin() {
+      if (spins <= 0) return;
+
       const r = Math.random();
       let reward = 0;
 
@@ -68,13 +126,18 @@
       else reward = 0.01;
 
       balance += reward;
+      lifetime += reward;
+      spins--;
+
       localStorage.setItem("balance", balance);
+      localStorage.setItem("lifetime", lifetime);
+      localStorage.setItem("spins", spins);
 
-      document.getElementById("balance").innerText =
-        "Balance: $" + balance.toFixed(4);
+      updateUI();
 
-      document.getElementById("last").innerText =
-        "Last spin: +$" + reward.toFixed(4);
+      /* ANALYTICS (local only, privacy-safe) */
+      const spinsTotal = parseInt(localStorage.getItem("spinsTotal")) || 0;
+      localStorage.setItem("spinsTotal", spinsTotal + 1);
     }
   </script>
 </body>

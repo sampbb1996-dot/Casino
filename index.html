@@ -6,29 +6,72 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       background: #0b0b0f;
-      color: #fff;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
       display: flex;
-      align-items: center;
       justify-content: center;
-      min-height: 100vh;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
     }
-    #app {
-      max-width: 420px;
-      width: 100%;
+    .container {
       text-align: center;
+    }
+    .balance {
+      font-size: 22px;
+      margin-bottom: 6px;
+    }
+    .last {
+      font-size: 14px;
+      opacity: 0.7;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 10px 26px;
+      font-size: 16px;
+      border-radius: 20px;
+      border: none;
+      background: #ffffff;
+      color: #000000;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <div id="app">
+  <div class="container">
     <h1>FairSpin MVP</h1>
-    <p>Prototype loaded.</p>
-    <button id="playBtn">Spin</button>
-    <div id="result"></div>
+
+    <div class="balance" id="balance">Balance: $0.0000</div>
+    <div class="last" id="last">Last spin: —</div>
+
+    <button onclick="spin()">Spin</button>
+
+    <p style="margin-top:20px; font-size:12px; opacity:0.6;">
+      Prototype. Balance represents your share of ad revenue.
+    </p>
   </div>
 
-  <script src="app.js"></script>
+  <script>
+    let balance = 0;
+
+    function spin() {
+      const r = Math.random();
+      let reward = 0;
+
+      if (r < 0.60) reward = 0;
+      else if (r < 0.90) reward = 0.0005;
+      else if (r < 0.99) reward = 0.002;
+      else reward = 0.01;
+
+      balance += reward;
+
+      document.getElementById("balance").innerText =
+        "Balance: $" + balance.toFixed(4);
+
+      document.getElementById("last").innerText =
+        "Last spin: +$" + reward.toFixed(4);
+    }
+  </script>
 </body>
 </html>

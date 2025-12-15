@@ -53,7 +53,10 @@
   </div>
 
   <script>
-    let balance = 0;
+    let balance = parseFloat(localStorage.getItem("balance")) || 0;
+
+    document.getElementById("balance").innerText =
+      "Balance: $" + balance.toFixed(4);
 
     function spin() {
       const r = Math.random();
@@ -65,6 +68,7 @@
       else reward = 0.01;
 
       balance += reward;
+      localStorage.setItem("balance", balance);
 
       document.getElementById("balance").innerText =
         "Balance: $" + balance.toFixed(4);

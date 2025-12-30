@@ -1,133 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-<title>Field</title>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Idle Tap</title>
 <style>
-html, body {
-  margin: 0;
-  padding: 0;
-  background: #000;
-  overflow: hidden;
-  touch-action: none;
+html,body{
+  margin:0;
+  padding:0;
+  background:#0b0b0b;
+  color:#fff;
+  font-family: system-ui, sans-serif;
+  text-align:center;
 }
-canvas { display: block; }
+#wrap{
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:16px;
+}
+#score{
+  font-size:40px;
+  font-weight:700;
+}
+button{
+  padding:16px;
+  font-size:18px;
+  border:none;
+  border-radius:12px;
+  background:#1f1f1f;
+  color:#fff;
+}
+button:active{transform:scale(0.97);}
+.small{opacity:0.6;font-size:14px;}
 </style>
 </head>
 <body>
 
-<canvas id="c"></canvas>
+<div id="wrap">
+  <div class="small">Coins</div>
+  <div id="score">0</div>
 
-<script>
-/* =========================
-   CANVAS SETUP
-========================= */
-const canvas = document.getElementById("c");
-const ctx = canvas.getContext("2d", { alpha: false });
+  <button id="tap">TAP</button>
 
-let W = 0, H = 0;
+  <button id="upgrade">Upgrade (+1/sec) – 50</button>
 
-function resize() {
-  W = Math.floor(window.innerWidth);
-  H = Math.floor(window.innerHeight);
-  canvas.width = W;
-  canvas.height = H;
-}
-window.addEventListener("resize", resize);
-resize();
-
-/* =========================
-   VALUE NOISE
-========================= */
-function rand(x, y) {
-  return (Math.sin(x * 127.1 + y * 311.7) * 43758.5453) % 1;
-}
-
-const lerp = (a, b, t) => a + (b - a) * t;
-const smooth = t => t * t * (3 - 2 * t);
-
-function noise(x, y) {
-  const x0 = Math.floor(x);
-  const y0 = Math.floor(y);
-  const x1 = x0 + 1;
-  const y1 = y0 + 1;
-
-  const sx = smooth(x - x0);
-  const sy = smooth(y - y0);
-
-  const n00 = rand(x0, y0);
-  const n10 = rand(x1, y0);
-  const n01 = rand(x0, y1);
-  const n11 = rand(x1, y1);
-
-  const ix0 = lerp(n00, n10, sx);
-  const ix1 = lerp(n01, n11, sx);
-  return lerp(ix0, ix1, sy);
-}
-
-/* =========================
-   FIELD STATE
-========================= */
-let t = 0;
-let impulse = 0;
-let pressed = false;
-
-/* =========================
-   INPUT (PRESS → RELEASE)
-========================= */
-window.addEventListener("pointerdown", () => {
-  pressed = true;
-});
-
-window.addEventListener("pointerup", () => {
-  if (pressed) {
-    impulse += 0.5;
-    pressed = false;
-  }
-});
-
-/* =========================
-   RENDER LOOP
-========================= */
-function draw() {
-  t += 0.002;
-  impulse *= 0.985;
-
-  const scale = 0.0025;
-  const warp = 0.6 + impulse;
-
-  const image = ctx.createImageData(W, H);
-  const d = image.data;
-
-  let i = 0;
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      const nx = x * scale;
-      const ny = y * scale;
-
-      const dx = noise(nx + t, ny) * warp;
-      const dy = noise(nx, ny + t) * warp;
-
-      const v = noise(nx + dx, ny + dy + t);
-      const lum = (v * 30) | 0;
-
-      d[i++] = lum;
-      d[i++] = lum;
-      d[i++] = lum;
-      d[i++] = 255;
-    }
-  }
-
-  /* CRITICAL iOS FIX */
-  ctx.putImageData(image, 0, 0, 0, 0, W, H);
-
-  requestAnimationFrame(draw);
-}
-
-draw();
-</script>
-
-</body>
-</html>
+  <div class="small" id="rate">

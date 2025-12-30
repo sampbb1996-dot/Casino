@@ -24,32 +24,28 @@ canvas {
 
 <script>
 /* =========================
-   CANVAS SETUP
+   CANVAS SETUP (NO DPR)
 ========================= */
 const canvas = document.getElementById("c");
 const ctx = canvas.getContext("2d");
 
-let W, H, DPR;
+let W, H;
 
 function resize() {
-  DPR = window.devicePixelRatio || 1;
   W = window.innerWidth;
   H = window.innerHeight;
-  canvas.width = W * DPR;
-  canvas.height = H * DPR;
-  canvas.style.width = W + "px";
-  canvas.style.height = H + "px";
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  canvas.width = W;
+  canvas.height = H;
 }
 window.addEventListener("resize", resize);
 resize();
 
 /* =========================
-   VALUE NOISE (2D)
+   VALUE NOISE
 ========================= */
-const rand = (x, y) => {
-  return Math.sin(x * 127.1 + y * 311.7) * 43758.5453123 % 1;
-};
+function rand(x, y) {
+  return (Math.sin(x * 127.1 + y * 311.7) * 43758.5453) % 1;
+}
 
 const lerp = (a, b, t) => a + (b - a) * t;
 const smooth = t => t * t * (3 - 2 * t);
@@ -78,19 +74,18 @@ function noise(x, y) {
 ========================= */
 let t = 0;
 let impulse = 0;
+let pressed = false;
 
 /* =========================
    INPUT (PRESS → RELEASE)
 ========================= */
-let pressed = false;
-
 window.addEventListener("pointerdown", () => {
   pressed = true;
 });
 
 window.addEventListener("pointerup", () => {
   if (pressed) {
-    impulse += 0.6;   // irreversible disturbance
+    impulse += 0.5;
     pressed = false;
   }
 });
@@ -99,8 +94,6 @@ window.addEventListener("pointerup", () => {
    RENDER LOOP
 ========================= */
 function draw() {
-  ctx.clearRect(0, 0, W, H);
-
   t += 0.002;
   impulse *= 0.985;
 
@@ -117,12 +110,10 @@ function draw() {
       const nx = x * scale;
       const ny = y * scale;
 
-      // domain warp
       const dx = noise(nx + t, ny) * warp;
       const dy = noise(nx, ny + t) * warp;
 
       const v = noise(nx + dx, ny + dy + t);
-
       const lum = Math.floor(255 * v * 0.12);
 
       d[i++] = lum;

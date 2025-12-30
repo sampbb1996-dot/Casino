@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 <title>Tap</title>
 
 <style>
@@ -11,91 +11,105 @@ html, body {
   padding: 0;
   background: #000;
   color: #fff;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   height: 100%;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #app {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
+  width: 100%;
+  max-width: 420px;
+  padding: 32px 20px;
+  text-align: center;
+}
+
+#label {
+  opacity: 0.6;
+  font-size: 18px;
+  margin-bottom: 6px;
 }
 
 #coins {
-  font-size: 18px;
-  opacity: 0.7;
-}
-
-#count {
   font-size: 64px;
-  font-weight: 600;
+  font-weight: 700;
+  margin-bottom: 30px;
 }
 
 button {
-  width: 80%;
-  max-width: 320px;
-  padding: 18px;
+  width: 100%;
+  padding: 20px;
+  margin-bottom: 16px;
   font-size: 20px;
   border-radius: 14px;
   border: none;
-  background: #1e1e1e;
-  color: white;
+  background: #1a1a1a;
+  color: #fff;
 }
 
 button:active {
-  transform: scale(0.98);
+  background: #333;
 }
 
-#upgrade {
-  font-size: 16px;
-  opacity: 0.85;
+#sub {
+  opacity: 0.6;
+  font-size: 14px;
+  margin-top: 8px;
 }
 </style>
 </head>
-<body>
 
+<body>
 <div id="app">
-  <div id="coins">Coins</div>
-  <div id="count">0</div>
+  <div id="label">Coins</div>
+  <div id="coins">0</div>
 
   <button id="tap">TAP</button>
+
   <button id="upgrade">Upgrade (+1/sec) – 50</button>
+  <div id="sub">Income: <span id="rate">0</span> / sec</div>
 </div>
 
 <script>
 let coins = 0;
 let rate = 0;
+let upgradeCost = 50;
 
-const countEl = document.getElementById("count");
-const tapBtn = document.getElementById("tap");
+const coinsEl = document.getElementById("coins");
+const rateEl = document.getElementById("rate");
 const upgradeBtn = document.getElementById("upgrade");
 
-tapBtn.addEventListener("click", () => {
-  coins += 1;
-  update();
-});
-
-upgradeBtn.addEventListener("click", () => {
-  if (coins >= 50) {
-    coins -= 50;
-    rate += 1;
-    update();
-  }
-});
-
-function update() {
-  countEl.textContent = coins;
+function render() {
+  coinsEl.textContent = Math.floor(coins);
+  rateEl.textContent = rate;
+  upgradeBtn.textContent = `Upgrade (+1/sec) – ${upgradeCost}`;
 }
 
-// passive income
+document.getElementById("tap").onclick = () => {
+  coins += 1;
+  render();
+};
+
+upgradeBtn.onclick = () => {
+  if (coins >= upgradeCost) {
+    coins -= upgradeCost;
+    rate += 1;
+    upgradeCost = Math.floor(upgradeCost * 1.6);
+    render();
+  }
+};
+
+// passive income loop
 setInterval(() => {
   coins += rate;
-  update();
+  render();
 }, 1000);
-</script>
 
+render();
+</script>
 </body>
 </html>

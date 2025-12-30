@@ -1,96 +1,90 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tap</title>
+<title>Idle Loop</title>
 <style>
-  body {
-    margin: 0;
-    background: #000;
-    color: #fff;
-    font-family: system-ui, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-  }
-  .count {
-    font-size: 64px;
-    margin-bottom: 10px;
-    transition: transform 0.1s;
-  }
-  .label {
-    opacity: 0.6;
-    margin-bottom: 30px;
-  }
-  button {
-    width: 80%;
-    max-width: 320px;
-    padding: 18px;
-    margin: 10px 0;
-    font-size: 18px;
-    border-radius: 14px;
-    border: none;
-    background: #1c1c1c;
-    color: white;
-  }
+body {
+  margin: 0;
+  background: #000;
+  color: #fff;
+  font-family: system-ui, sans-serif;
+  text-align: center;
+}
+button {
+  width: 80%;
+  padding: 18px;
+  margin: 10px;
+  font-size: 18px;
+  background: #222;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+}
+.small {
+  opacity: 0.6;
+  font-size: 14px;
+}
 </style>
 </head>
 <body>
 
-<div class="label">Coins</div>
-<div class="count" id="coins">0</div>
+<h2>Coins</h2>
+<h1 id="coins">0</h1>
 
 <button onclick="tap()">TAP</button>
-<button onclick="buy()">Upgrade (+<span id="rate">1</span>/sec) – <span id="cost">50</span></button>
 
-<div class="label">Income: <span id="income">0</span>/sec</div>
+<button onclick="buyGen()">
+Buy Generator (+1/sec) – <span id="genCost">25</span>
+</button>
+
+<button onclick="prestige()" id="prestigeBtn" style="display:none">
+RESET → Gain Multiplier
+</button>
+
+<div class="small">
+Generators: <span id="gens">0</span><br>
+Income: <span id="income">0</span> / sec<br>
+Multiplier: <span id="multi">1x</span>
+</div>
 
 <script>
 let coins = 0;
-let income = 0;
-let upgradeLevel = 0;
+let gens = 0;
+let genCost = 25;
+let multiplier = 1;
 
 function tap() {
-  coins++;
-  flash();
-  update();
+  coins += multiplier;
 }
 
-function buy() {
-  const cost = getCost();
-  if (coins >= cost) {
-    coins -= cost;
-    upgradeLevel++;
-    income += Math.pow(5, upgradeLevel - 1);
-    update();
+function buyGen() {
+  if (coins >= genCost) {
+    coins -= genCost;
+    gens++;
+    genCost = Math.floor(genCost * 1.8);
   }
 }
 
-function getCost() {
-  return Math.floor(50 * Math.pow(4.5, upgradeLevel));
-}
-
-function update() {
-  document.getElementById("coins").textContent = Math.floor(coins);
-  document.getElementById("rate").textContent = Math.pow(5, upgradeLevel) || 1;
-  document.getElementById("cost").textContent = getCost();
-  document.getElementById("income").textContent = income;
-}
-
-function flash() {
-  const el = document.getElementById("coins");
-  el.style.transform = "scale(1.08)";
-  setTimeout(() => el.style.transform = "scale(1)", 80);
+function prestige() {
+  multiplier++;
+  coins = 0;
+  gens = 0;
+  genCost = 25;
 }
 
 setInterval(() => {
-  coins += income / 10;
-  update();
-}, 100);
+  coins += gens * multiplier;
+  document.getElementById("coins").innerText = Math.floor(coins);
+  document.getElementById("gens").innerText = gens;
+  document.getElementById("genCost").innerText = genCost;
+  document.getElementById("income").innerText = gens * multiplier;
+  document.getElementById("multi").innerText = multiplier + "x";
 
-update();
+  document.getElementById("prestigeBtn").style.display =
+    coins > 500 ? "block" : "none";
+}, 1000);
 </script>
 
 </body>

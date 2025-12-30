@@ -13,9 +13,7 @@ html, body {
   overflow: hidden;
   touch-action: none;
 }
-canvas {
-  display: block;
-}
+canvas { display: block; }
 </style>
 </head>
 <body>
@@ -24,16 +22,16 @@ canvas {
 
 <script>
 /* =========================
-   CANVAS SETUP (NO DPR)
+   CANVAS SETUP
 ========================= */
 const canvas = document.getElementById("c");
-const ctx = canvas.getContext("2d");
+const ctx = canvas.getContext("2d", { alpha: false });
 
-let W, H;
+let W = 0, H = 0;
 
 function resize() {
-  W = window.innerWidth;
-  H = window.innerHeight;
+  W = Math.floor(window.innerWidth);
+  H = Math.floor(window.innerHeight);
   canvas.width = W;
   canvas.height = H;
 }
@@ -106,7 +104,6 @@ function draw() {
   let i = 0;
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
-
       const nx = x * scale;
       const ny = y * scale;
 
@@ -114,7 +111,7 @@ function draw() {
       const dy = noise(nx, ny + t) * warp;
 
       const v = noise(nx + dx, ny + dy + t);
-      const lum = Math.floor(255 * v * 0.12);
+      const lum = (v * 30) | 0;
 
       d[i++] = lum;
       d[i++] = lum;
@@ -123,7 +120,9 @@ function draw() {
     }
   }
 
-  ctx.putImageData(image, 0, 0);
+  /* CRITICAL iOS FIX */
+  ctx.putImageData(image, 0, 0, 0, 0, W, H);
+
   requestAnimationFrame(draw);
 }
 

@@ -1,144 +1,143 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>FairSpin</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body {
-      background: #0b0b0f;
-      color: #ffffff;
-      font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .container {
-      text-align: center;
-      width: 100%;
-      max-width: 340px;
-    }
-    .balance {
-      font-size: 22px;
-      margin-bottom: 4px;
-    }
-    .sub {
-      font-size: 13px;
-      opacity: 0.7;
-      margin-bottom: 10px;
-    }
-    .spins {
-      font-size: 14px;
-      opacity: 0.8;
-      margin-bottom: 14px;
-    }
-    button {
-      padding: 10px 28px;
-      font-size: 16px;
-      border-radius: 20px;
-      border: none;
-      background: #ffffff;
-      color: #000000;
-      cursor: pointer;
-    }
-    button:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-    .footer {
-      font-size: 11px;
-      opacity: 0.55;
-      margin-top: 18px;
-      line-height: 1.4;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Field</title>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  overflow: hidden;
+  touch-action: none;
+}
+canvas {
+  display: block;
+}
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>FairSpin</h1>
 
-    <div class="balance" id="balance">Balance: $0.0000</div>
-    <div class="sub" id="lifetime">Lifetime earned: $0.0000</div>
-    <div class="sub" id="withdraw">Withdrawable soon</div>
+<canvas id="c"></canvas>
 
-    <div class="spins" id="spins">Spins left today: 50</div>
+<script>
+/* =========================
+   CANVAS SETUP
+========================= */
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
 
-    <button id="spinBtn" onclick="spin()">Spin</button>
+let W, H, DPR;
 
-    <div class="footer">
-      Ad-funded positive-EV game.<br>
-      No deposits. No losses. Prototype.
-    </div>
-  </div>
+function resize() {
+  DPR = window.devicePixelRatio || 1;
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * DPR;
+  canvas.height = H * DPR;
+  canvas.style.width = W + "px";
+  canvas.style.height = H + "px";
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+window.addEventListener("resize", resize);
+resize();
 
-  <script>
-    /* CONFIG */
-    const DAILY_CAP = 50;
-    const WITHDRAW_THRESHOLD = 5.00;
+/* =========================
+   VALUE NOISE (2D)
+========================= */
+const rand = (x, y) => {
+  return Math.sin(x * 127.1 + y * 311.7) * 43758.5453123 % 1;
+};
 
-    /* DATE */
-    const today = new Date().toDateString();
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = t => t * t * (3 - 2 * t);
 
-    /* STATE */
-    let balance = parseFloat(localStorage.getItem("balance")) || 0;
-    let lifetime = parseFloat(localStorage.getItem("lifetime")) || 0;
-    let spins = parseInt(localStorage.getItem("spins")) || DAILY_CAP;
-    let lastDate = localStorage.getItem("date");
+function noise(x, y) {
+  const x0 = Math.floor(x);
+  const y0 = Math.floor(y);
+  const x1 = x0 + 1;
+  const y1 = y0 + 1;
 
-    if (lastDate !== today) {
-      spins = DAILY_CAP;
-      localStorage.setItem("date", today);
-      localStorage.setItem("spins", spins);
+  const sx = smooth(x - x0);
+  const sy = smooth(y - y0);
+
+  const n00 = rand(x0, y0);
+  const n10 = rand(x1, y0);
+  const n01 = rand(x0, y1);
+  const n11 = rand(x1, y1);
+
+  const ix0 = lerp(n00, n10, sx);
+  const ix1 = lerp(n01, n11, sx);
+  return lerp(ix0, ix1, sy);
+}
+
+/* =========================
+   FIELD STATE
+========================= */
+let t = 0;
+let impulse = 0;
+
+/* =========================
+   INPUT (PRESS → RELEASE)
+========================= */
+let pressed = false;
+
+window.addEventListener("pointerdown", () => {
+  pressed = true;
+});
+
+window.addEventListener("pointerup", () => {
+  if (pressed) {
+    impulse += 0.6;   // irreversible disturbance
+    pressed = false;
+  }
+});
+
+/* =========================
+   RENDER LOOP
+========================= */
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  t += 0.002;
+  impulse *= 0.985;
+
+  const scale = 0.0025;
+  const warp = 0.6 + impulse;
+
+  const image = ctx.createImageData(W, H);
+  const d = image.data;
+
+  let i = 0;
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+
+      const nx = x * scale;
+      const ny = y * scale;
+
+      // domain warp
+      const dx = noise(nx + t, ny) * warp;
+      const dy = noise(nx, ny + t) * warp;
+
+      const v = noise(nx + dx, ny + dy + t);
+
+      const lum = Math.floor(255 * v * 0.12);
+
+      d[i++] = lum;
+      d[i++] = lum;
+      d[i++] = lum;
+      d[i++] = 255;
     }
+  }
 
-    /* UI INIT */
-    updateUI();
+  ctx.putImageData(image, 0, 0);
+  requestAnimationFrame(draw);
+}
 
-    function updateUI() {
-      document.getElementById("balance").innerText =
-        "Balance: $" + balance.toFixed(4);
+draw();
+</script>
 
-      document.getElementById("lifetime").innerText =
-        "Lifetime earned: $" + lifetime.toFixed(4);
-
-      document.getElementById("withdraw").innerText =
-        balance >= WITHDRAW_THRESHOLD
-          ? "Withdrawable (coming soon)"
-          : "Withdrawable at $" + WITHDRAW_THRESHOLD.toFixed(2);
-
-      document.getElementById("spins").innerText =
-        "Spins left today: " + spins;
-
-      document.getElementById("spinBtn").disabled = spins <= 0;
-    }
-
-    function spin() {
-      if (spins <= 0) return;
-
-      const r = Math.random();
-      let reward = 0;
-
-      if (r < 0.60) reward = 0;
-      else if (r < 0.90) reward = 0.0005;
-      else if (r < 0.99) reward = 0.002;
-      else reward = 0.01;
-
-      balance += reward;
-      lifetime += reward;
-      spins--;
-
-      localStorage.setItem("balance", balance);
-      localStorage.setItem("lifetime", lifetime);
-      localStorage.setItem("spins", spins);
-
-      updateUI();
-
-      /* ANALYTICS (local only, privacy-safe) */
-      const spinsTotal = parseInt(localStorage.getItem("spinsTotal")) || 0;
-      localStorage.setItem("spinsTotal", spinsTotal + 1);
-    }
-  </script>
 </body>
 </html>
